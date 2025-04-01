@@ -48,18 +48,62 @@ io.on("connection", (socket) => {
     }
   });
 
+  // socket.on("update-status", (data) => {
+  //   console.log(`Received status update: ${JSON.stringify(data)}`);
+    
+  //   // Find and update the expense
+  //   const expense = expenses.find(e => e.id === data.id);
+  //   if (expense) {
+  //     expense.status = data.status || "Paid";
+  //     console.log(`Updated status for Title - ${expense.title} ID - ${expense.id} to ${expense.status}`);
+  //   }
+    
+  //   // Broadcast the update to all connected clients
+  //   io.emit('status-updated', data);
+  // });
+
+//   socket.on("update-status", (data) => {
+//     console.log(`Received status update: ${JSON.stringify(data)}`);
+    
+//     // Find and update the expense
+//     const expense = expenses.find(e => e.id === data.id);
+//     if (expense) {
+//         expense.status = data.status || "Paid";
+//         expense.note = data.note || "";  // Store the note
+
+//         console.log(`Updated status for Title - ${expense.title} ID - ${expense.id} to ${expense.status} with Note - ${expense.note}`);
+//     }
+    
+//     // Broadcast the update to all connected clients
+//     io.emit('status-updated', data);
+// });
+
+
   socket.on("update-status", (data) => {
-    console.log(`Received status update: ${JSON.stringify(data)}`);
-    
-    // Find and update the expense
-    const expense = expenses.find(e => e.id === data.id);
-    if (expense) {
-      expense.status = data.status || "Paid";
-      console.log(`Updated status for Title - ${expense.title} ID - ${expense.id} to ${expense.status}`);
-    }
-    
-    // Broadcast the update to all connected clients
-    io.emit('status-updated', data);
+      console.log(`Received update: ${JSON.stringify(data)}`);
+      const expense = expenses.find(e => e.id === data.id);
+      if (expense) {
+          expense.status = data.status;
+          expense.note = data.note;
+          if(data.paidDate != undefined){
+          expense.paidDate = data.paidDate;
+          }
+          if (data.amount !== undefined) {
+              expense.amount = data.amount;
+          }
+          console.log(`Updated Expense: ${JSON.stringify(expense)}`);
+      }
+      io.emit('status-updated', data);
+  });
+
+  socket.on("update-expense-approved", (data) => {
+      console.log(`Received Approved: ${JSON.stringify(data)}`);
+      const expense = expenses.find(e => e.id === data.id);
+      if (expense) {
+          expense.isApproved = data.isApproved;
+          console.log(`Approved Expense: ${JSON.stringify(expense)}`);
+      }
+      io.emit('approved-updated', data);
   });
 
   socket.on("delete-expense", (id) => {
