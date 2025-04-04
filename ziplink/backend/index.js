@@ -304,7 +304,7 @@ try {
       if (expense.receiptImage) {
         const url = await uploadBase64Image(expense.receiptImage);
         if (url) expense.receiptImageUrl = url;
-        print(url);
+        console.log(`Added new url: ${expense.receiptImageUrl}`);
         delete expense.receiptImage;
       }
 
@@ -416,6 +416,7 @@ try {
       if (data.receiptImage) {
         const url = await uploadBase64Image(data.receiptImage);
         if (url) expense.receiptImageUrl = url;
+        console.log(`Added new url: ${expense.receiptImageUrl}`);
       }
 
       io.emit("status-updated", {
@@ -480,3 +481,208 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 9000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//   socket.on("update-status", (data) => {
+//     console.log(`Received update: ${JSON.stringify(data)}`);
+    
+//     const expense = expenses.find(e => e.id === data.id);
+//     if (expense) {
+//         expense.status = data.status;
+//         expense.paidBy = data.paidBy;
+
+//         if (!expense.notes) {
+//             expense.notes = [];
+//         }
+        
+
+//         if (data.newNote) {
+//             expense.notes.push({
+//                 noteID: data.newNote.noteID, 
+//                 note: data.newNote.note,
+//                 noteTimeStamp: data.newNote.noteTimeStamp
+//             });
+//         }
+
+//         if (data.paidDate !== undefined) {
+//             expense.paidDate = data.paidDate;
+//         }
+
+//         if (data.amount !== undefined) {
+//             expense.amount = data.amount;
+//         }
+
+//         let receiptImageUrl = null;
+
+//       // Check if there is an image (base64)
+//       if (data.receiptImage) {
+//         const imageBuffer = Buffer.from(data.receiptImage, "base64");
+//         const imageFileName = `${data.id}.jpg`;
+//         const imagePath = path.join(uploadDir, imageFileName);
+
+//         fs.writeFileSync(imagePath, imageBuffer);
+//         receiptImageUrl = `http://localhost:9000/uploads/${imageFileName}`;
+//       }
+
+//       // Store only the image URL
+//       expense.receiptImageUrl = receiptImageUrl;
+
+//         console.log(`Updated Expense: ${JSON.stringify(expense)}`);
+        
+//         // Emit the updated status with the modified notes list
+//         io.emit('status-updated', expense);
+//     }
+// });
+
+// socket.on("update-status", (data) => {
+//     console.log(`Received update: ${JSON.stringify(data)}`);
+    
+//     const expense = expenses.find(e => e.id === data.id);
+//     if (expense) {
+//         expense.status = data.status;
+//         expense.paidBy = data.paidBy;
+
+//         if (!expense.notes) {
+//             expense.notes = [];
+//         }
+
+//         if (data.newNote) {
+//             expense.notes.push({
+//                 noteID: data.newNote.noteID, 
+//                 note: data.newNote.note,
+//                 noteTimeStamp: data.newNote.noteTimeStamp
+//             });
+//         }
+
+//         if (data.paidDate !== undefined) {
+//             expense.paidDate = data.paidDate;
+//         }
+
+//         if (data.amount !== undefined) {
+//             expense.amount = data.amount;
+//         }
+
+//         let receiptImageUrl = null;
+
+//         // Check if there is an image (base64)
+//         if (data.receiptImage) {
+//             const imageBuffer = Buffer.from(data.receiptImage, "base64");
+//             const imageFileName = `${data.id}.jpg`;
+//             const imagePath = path.join(uploadDir, imageFileName);
+
+//             fs.writeFile(imagePath, imageBuffer, (err) => {
+//                 if (err) {
+//                     console.error("Error saving image:", err);
+//                     return;
+//                 }
+                
+//                 // Append timestamp to avoid caching issues
+//                 receiptImageUrl = `http://localhost:9000/uploads/${imageFileName}?t=${Date.now()}`;
+//                 expense.receiptImageUrl = receiptImageUrl;
+
+//                 console.log(`Updated Expense: ${JSON.stringify(expense)}`);
+
+//                 // Emit the updated status and image to the frontend
+//                 io.emit('status-updated', expense);
+//                 io.emit('image-updated', { id: expense.id, receiptImageUrl });
+//             });
+//         } else {
+//             // If no new image, just emit the updated expense
+//             io.emit('status-updated', expense);
+//         }
+//     }
+// });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // socket.on("update-status", (data) => {
+  //   console.log(`Received status update: ${JSON.stringify(data)}`);
+    
+  //   // Find and update the expense
+  //   const expense = expenses.find(e => e.id === data.id);
+  //   if (expense) {
+  //     expense.status = data.status || "Paid";
+  //     console.log(`Updated status for Title - ${expense.title} ID - ${expense.id} to ${expense.status}`);
+  //   }
+    
+  //   // Broadcast the update to all connected clients
+  //   io.emit('status-updated', data);
+  // });
+
+//   socket.on("update-status", (data) => {
+//     console.log(`Received status update: ${JSON.stringify(data)}`);
+    
+//     // Find and update the expense
+//     const expense = expenses.find(e => e.id === data.id);
+//     if (expense) {
+//         expense.status = data.status || "Paid";
+//         expense.note = data.note || "";  // Store the note
+
+//         console.log(`Updated status for Title - ${expense.title} ID - ${expense.id} to ${expense.status} with Note - ${expense.note}`);
+//     }
+    
+//     // Broadcast the update to all connected clients
+//     io.emit('status-updated', data);
+// });
+
+
+  // socket.on("update-status", (data) => {
+  //     console.log(`Received update: ${JSON.stringify(data)}`);
+  //     const expense = expenses.find(e => e.id === data.id);
+  //     if (expense) {
+  //         expense.status = data.status;
+  //         expense.note = data.note;
+  //         if(data.paidDate != undefined){
+  //         expense.paidDate = data.paidDate;
+  //         }
+  //         if (data.amount !== undefined) {
+  //             expense.amount = data.amount;
+  //         }
+  //         console.log(`Updated Expense: ${JSON.stringify(expense)}`);
+  //     }
+  //     io.emit('status-updated', data);
+  // });
