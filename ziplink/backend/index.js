@@ -304,6 +304,7 @@ try {
       if (expense.receiptImage) {
         const url = await uploadBase64Image(expense.receiptImage);
         if (url) expense.receiptImageUrl = url;
+        print(url);
         delete expense.receiptImage;
       }
 
