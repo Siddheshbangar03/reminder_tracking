@@ -395,36 +395,189 @@ try {
 //     }
 // });
 
-    socket.on("update-status", async (data) => {
-    const expense = expenses.find((e) => e.id === data.id);
-    if (expense) {
-      expense.status = data.status;
-      expense.paidBy = data.paidBy;
+  //   socket.on("update-status", async (data) => {
+  //   const expense = expenses.find((e) => e.id === data.id);
+  //   if (expense) {
+  //     expense.status = data.status;
+  //     expense.paidBy = data.paidBy;
 
-      if (!expense.notes) expense.notes = [];
-      if (data.newNote) {
+  //     if (!expense.notes) expense.notes = [];
+  //     if (data.newNote) {
+  //       expense.notes.push({
+  //         noteID: data.newNote.noteID,
+  //         note: data.newNote.note,
+  //         noteTimeStamp: data.newNote.noteTimeStamp,
+  //       });
+  //     }
+
+  //     if (data.paidDate !== undefined) expense.paidDate = data.paidDate;
+  //     if (data.amount !== undefined) expense.amount = data.amount;
+  //     if (data.paidAmount !== undefined) {
+  //     expense.paidAmount = data.paidAmount;
+  //   } else if (data.status === 'Paid') {
+  //     expense.paidAmount = expense.amount;
+  //   }
+
+  //   // Calculate balance amount
+  //   if (data.balanceAmount !== undefined) {
+  //     expense.balanceAmount = data.balanceAmount;
+  //   } else {
+  //     expense.balanceAmount = (expense.amount || 0) - (expense.paidAmount || 0);
+  //     if (expense.balanceAmount < 0) expense.balanceAmount = 0;
+  //   }
+
+
+  //     if (data.receiptImage) {
+  //       const url = await uploadBase64Image(data.receiptImage);
+  //       if (url) expense.receiptImageUrl = url;
+  //       console.log(`Added new url: ${expense.receiptImageUrl}`);
+  //     }
+
+  //      if (data.status === 'Paid') {
+  //     expense.paidAmount = expense.amount;
+  //     expense.balanceAmount = 0;
+  //   }
+
+  //   console.log(`updated-expense: ${data}`)
+
+  //     io.emit("status-updated", {
+  //       ...expense,
+  //       timestamp: Date.now(),
+  //     });
+  //   }
+  // });
+
+  socket.on("update-status", async (data) => {
+  const expense = expenses.find((e) => e.id === data.id);
+  if (expense) {
+    expense.status = data.status;
+    expense.paidBy = data.paidBy;
+
+    // Update notes
+    if (!expense.notes) expense.notes = [];
+    if (data.newNote) {
+      expense.notes.push({
+        noteID: data.newNote.noteID,
+        note: data.newNote.note,
+        noteTimeStamp: data.newNote.noteTimeStamp,
+      });
+    }
+
+    // Update dates
+    if (data.paidDate !== undefined) expense.paidDate = data.paidDate;
+    
+    // Update amounts
+    if (data.amount !== undefined) expense.amount = data.amount;
+    
+    // Handle payment amounts
+    if (data.paidAmount !== undefined) {
+      expense.paidAmount = data.paidAmount;
+    }
+    
+    if (data.balanceAmount !== undefined) {
+      expense.balanceAmount = data.balanceAmount;
+    } else {
+      // Calculate balance if not provided
+      expense.balanceAmount = (expense.amount || 0) - (expense.paidAmount || 0);
+      if (expense.balanceAmount < 0) expense.balanceAmount = 0;
+    }
+
+    // Force Paid status to have correct amounts
+    if (data.status === 'Paid') {
+      expense.paidAmount = expense.amount;
+      expense.balanceAmount = 0;
+    }
+
+    // Handle receipt image
+    if (data.receiptImage) {
+      const url = await uploadBase64Image(data.receiptImage);
+      if (url) expense.receiptImageUrl = url;
+      console.log(`Added new url: ${expense.receiptImageUrl}`);
+    }
+
+    io.emit("status-updated", {
+      ...expense,
+      timestamp: Date.now(),
+    });
+  }
+});
+
+
+  // Add this handler in your socket.io connection
+socket.on('update-expense', async (data) => {
+  try {
+    console.log(`Updating notes for expense ID: ${data.id}`);
+
+    const expense = expenses.find(e => e.id === data.id);
+    if (!expense) {
+      console.log(`Expense not found: ${data.id}`);
+      return;
+    }
+
+    // Ensure notes array exists
+    if (!expense.notes) expense.notes = [];
+
+    // Handle newNote (single note)
+    if (data.newNote) {
+      const exists = expense.notes.some(note => note.noteID === data.newNote.noteID);
+      if (!exists) {
         expense.notes.push({
           noteID: data.newNote.noteID,
           note: data.newNote.note,
           noteTimeStamp: data.newNote.noteTimeStamp,
         });
+        console.log(`Added newNote to expense ${data.id}`);
+      } else {
+        console.log(`Duplicate noteID: ${data.newNote.noteID} ignored`);
       }
-
-      if (data.paidDate !== undefined) expense.paidDate = data.paidDate;
-      if (data.amount !== undefined) expense.amount = data.amount;
-
-      if (data.receiptImage) {
-        const url = await uploadBase64Image(data.receiptImage);
-        if (url) expense.receiptImageUrl = url;
-        console.log(`Added new url: ${expense.receiptImageUrl}`);
-      }
-
-      io.emit("status-updated", {
-        ...expense,
-        timestamp: Date.now(),
-      });
     }
-  });
+
+    // Handle multiple notes if provided
+    if (Array.isArray(data.notes)) {
+      const existingIDs = new Set(expense.notes.map(n => n.noteID));
+      data.notes.forEach(note => {
+        if (!existingIDs.has(note.noteID)) {
+          expense.notes.push(note);
+        }
+      });
+      console.log(`Merged multiple notes for expense ${data.id}`);
+    }
+
+    // Optional: update receipt image
+    if (data.receiptImage) {
+      const uploadResult = await uploadBase64Image(data.receiptImage);
+      if (uploadResult) {
+        expense.receiptImageUrl = uploadResult;
+        console.log(`Uploaded receipt image for ${data.id}`);
+      }
+    }
+
+    expense.updatedAt = new Date();
+
+    io.emit('expense-updated', {
+      ...expense,
+      timestamp: Date.now(),
+    });
+
+  } catch (error) {
+    console.error('Error updating expense notes:', error);
+  }
+});
+
+
+// Improved image upload helper
+async function uploadBase64Image(base64String, folder = 'expenses') {
+  try {
+    const result = await cloudinary.uploader.upload(
+      `data:image/jpeg;base64,${base64String}`, 
+      { folder, resource_type: 'auto' }
+    );
+    return result.secure_url;
+  } catch (error) {
+    console.error('Cloudinary upload error:', error);
+    return null;
+  }
+}
 
 
   socket.on("update-expense-approved", (data) => {
