@@ -230,6 +230,7 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 let expenses = [];
+let tasks = [];
 
 const uploadBase64Image = async (base64String, folder = "expenses") => {
   try {
@@ -250,6 +251,7 @@ io.on("connection", (socket) => {
   
   // Send existing expenses to newly connected client
   socket.emit("load-expenses", expenses);
+  socket.emit("load-tasks", tasks);
   
   socket.on("user-message", async (message) => {
   console.log(`Received message: ${message}`);
@@ -605,6 +607,84 @@ async function uploadBase64Image(base64String, folder = 'expenses') {
       console.log(`Expense ID - ${id} not found`)
     }
   });
+
+  socket.on("add-task", (taskData) => {
+    try {
+      const task = typeof taskData === 'string' ? JSON.parse(taskData) : taskData;
+      const existingIndex = tasks.findIndex(t => t.id === task.id);
+      
+      if (existingIndex !== -1) {
+        tasks[existingIndex] = task;
+        console.log(`Updated task: ${task} - ${taskData}`);
+      } else {
+        tasks.push(task);
+        console.log(`Added new task: ${task} - ${taskData}`);
+      }
+      
+      io.emit("task-update", task);
+    } catch (error) {
+      console.error("Error processing task:", error);
+    }
+  });
+
+  socket.on("update-task", (taskData) => {
+    try {
+      const task = typeof taskData === 'string' ? JSON.parse(taskData) : taskData;
+      const index = tasks.findIndex(t => t.id === task.id);
+      
+      if (index !== -1) {
+        tasks[index] = task;
+        console.log(`Updated task: ${task.taskTitle} - ${taskData}`);
+        io.emit("task-update", task);
+      }
+    } catch (error) {
+      console.error("Error updating task:", error);
+    }
+  });
+
+  socket.on("update-task-status", async (data) => {
+    try {
+      const task = tasks.find(t => t.id === data.id);
+      if (task) {
+        task.status = data.status || "Pending";
+        
+        if (data.newNote) {
+          if (!task.toDoNotes) task.toDoNotes = [];
+          task.toDoNotes.push({
+            noteID: data.newNote.noteID,
+            note: data.newNote.note,
+            noteTimeStamp: data.newNote.noteTimeStamp
+          });
+        }
+        
+        console.log(`Updated task status: ${task.taskTitle} to ${task.status}`);
+        io.emit("task-status-updated", {
+          id: task.id,
+          status: task.status,
+          notes: task.toDoNotes
+        });
+      }
+    } catch (error) {
+      console.error("Error updating task status:", error);
+    }
+  });
+
+  socket.on("delete-task", (id) => {
+    console.log(`Request to delete task: ${id}`);
+    
+    taskToDelete = tasks.find( t => t.id === id);
+    // Find and remove the task
+    const initialLength = tasks.length;
+    tasks = tasks.filter(t => t.id !== id);
+    
+    if (tasks.length < initialLength) {
+      console.log(`Deleted expense: ${taskToDelete?.title || 'Unknown'} (ID: ${id})`);
+      io.emit('task-deleted', id);
+    } else {
+      console.log(`Task ID - ${id} not found`)
+    }
+  });
+
 
   socket.on("disconnect", () => {
     console.log("A user disconnected:", socket.id);
