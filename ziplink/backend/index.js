@@ -461,6 +461,7 @@ try {
       expense.notes.push({
         noteID: data.newNote.noteID,
         note: data.newNote.note,
+        source: data.newNote.source,
         noteTimeStamp: data.newNote.noteTimeStamp,
       });
     }
@@ -526,6 +527,7 @@ socket.on('update-expense', async (data) => {
         expense.notes.push({
           noteID: data.newNote.noteID,
           note: data.newNote.note,
+          source: data.newNote.source,
           noteTimeStamp: data.newNote.noteTimeStamp,
         });
         console.log(`Added newNote to expense ${data.id}`);
@@ -653,6 +655,7 @@ async function uploadBase64Image(base64String, folder = 'expenses') {
           task.toDoNotes.push({
             noteID: data.newNote.noteID,
             note: data.newNote.note,
+            source: data.newNote.source,
             noteTimeStamp: data.newNote.noteTimeStamp
           });
         }
